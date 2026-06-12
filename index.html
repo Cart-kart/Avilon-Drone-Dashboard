@@ -162,12 +162,21 @@
 //    dashboard's own PIN so there is never a second password.
 // ════════════════════════════════════════════════════════════
 
-// Customer dashboards (order = tab order)
+// ┌──────────────────────────────────────────────────────────────────┐
+// │  ADD A NEW CUSTOMER HERE — just add one line to this list.          │
+// │    key   : short unique id (lowercase, used in the URL #hash)       │
+// │    label : text shown on the tab                                    │
+// │    url   : the customer dashboard's published URL (trailing slash)  │
+// │  Tabs, routing, and auto-unlock are all generated automatically.    │
+// │  NOTE: PIN auto-dismiss only works for same-origin dashboards       │
+// │  (cart-kart.github.io). External URLs will show their own login.    │
+// └──────────────────────────────────────────────────────────────────┘
 const SITES = [
   { key: 'dksh',   label: 'DKSH Bangna',    url: 'https://cart-kart.github.io/DKSH-Bangna-Drone-Dashboard/' },
   { key: 'yusen',  label: 'Amazon / Yusen', url: 'https://cart-kart.github.io/Amazon-Yusen-Drone-Dashboard/' },
   { key: 'pcg',    label: 'PCG Bangna',     url: 'https://cart-kart.github.io/PCG-Bangna-Drone-Dashboard/' },
   { key: 'harley', label: 'Harley / DHL',   url: 'https://cart-kart.github.io/HarleyDavidson-DHL-Drone-Dashboard/' },
+  // { key: 'newco', label: 'New Customer',  url: 'https://cart-kart.github.io/NewCustomer-Drone-Dashboard/' },
 ];
 
 // Master password (client-side obfuscation only — internal control panel, not real security).
