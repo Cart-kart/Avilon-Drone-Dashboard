@@ -167,11 +167,7 @@
   <div id="gate">
     <div class="gate-card" id="gate-card">
       <img class="gate-logo-img" src="AR-New-LOGO.png" alt="Avilon Robotics" />
-      <div class="gate-title">Avilon Drone Dashboards</div>
-      <div class="gate-sub">Enter access password to continue</div>
-      <input id="pw" type="password" autocomplete="off" placeholder="Password" autofocus />
-      <button id="gate-btn">Unlock</button>
-      <div id="gate-err"></div>
+      <input id="pw" type="password" autocomplete="off" autofocus />
     </div>
   </div>
 
@@ -231,7 +227,6 @@ const SS_MASTER = 'avilon_master_ok';
 const gate     = document.getElementById('gate');
 const gateCard = document.getElementById('gate-card');
 const pwInput  = document.getElementById('pw');
-const gateErr  = document.getElementById('gate-err');
 const chooser  = document.getElementById('chooser');
 const chGrid   = document.getElementById('ch-grid');
 const tabsEl   = document.getElementById('tabs');
@@ -261,12 +256,10 @@ function tryUnlock() {
     sessionStorage.setItem(SS_MASTER, '1');
     openApp();
   } else {
-    gateErr.textContent = 'Incorrect password';
     gateCard.classList.remove('shake'); void gateCard.offsetWidth; gateCard.classList.add('shake');
     pwInput.select();
   }
 }
-document.getElementById('gate-btn').addEventListener('click', tryUnlock);
 pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
 
 function openApp() {
@@ -294,7 +287,6 @@ function lock() {
   chooser.classList.add('hidden');
   gate.classList.remove('hidden');
   pwInput.value = '';
-  gateErr.textContent = '';
   pwInput.focus();
 }
 document.getElementById('lockbtn').addEventListener('click', lock);
