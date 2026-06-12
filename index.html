@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Avilon Drone Dashboards</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚁</text></svg>" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #0b1220;
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== Top bar ===== */
+  #topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(90deg, #0d2b5e 0%, #123a7a 100%);
+    padding: 0 14px;
+    height: 54px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    z-index: 10;
+  }
+  #brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    color: #fff;
+    margin-right: 18px;
+    white-space: nowrap;
+    line-height: 1.05;
+  }
+  #brand .logo { font-size: 1.3rem; }
+  #brand .sub { font-weight: 500; font-size: 0.65rem; color: #9fc1ff; }
+
+  #tabs { display: flex; gap: 4px; flex: 1 1 auto; overflow-x: auto; }
+  .tab {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #b9c7e0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    border-bottom: 3px solid transparent;
+  }
+  .tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .tab.active {
+    background: #0b1220;
+    color: #fff;
+    border-bottom: 3px solid #38bdf8;
+  }
+  #lockbtn {
+    appearance: none; border: 0; cursor: pointer;
+    background: rgba(255,255,255,0.10); color: #cfe0ff;
+    font-size: 0.75rem; font-weight: 600;
+    padding: 7px 12px; border-radius: 8px; margin-left: 8px; white-space: nowrap;
+  }
+  #lockbtn:hover { background: rgba(255,255,255,0.20); color: #fff; }
+
+  /* ===== Frame area ===== */
+  #framewrap { flex: 1 1 auto; position: relative; background: #0b1220; }
+  iframe#site {
+    border: 0; width: 100%; height: 100%; display: block; background: #fff;
+  }
+  #loading {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; color: #7d93b8; font-size: 0.9rem;
+    background: #0b1220; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+  }
+  #loading.show { opacity: 1; }
+  .spinner {
+    width: 34px; height: 34px; border: 3px solid #1e3a5f; border-top-color: #38bdf8;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== Master gate ===== */
+  #gate {
+    position: fixed; inset: 0; z-index: 100;
+    background: radial-gradient(circle at 50% 30%, #14305f 0%, #0b1220 70%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #gate.hidden { display: none; }
+  .gate-card {
+    background: #0f1b33; border: 1px solid #1e3a5f; border-radius: 18px;
+    padding: 38px 34px; width: 320px; max-width: 90vw; text-align: center;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.5);
+  }
+  .gate-logo { font-size: 2.4rem; margin-bottom: 10px; }
+  .gate-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .gate-sub { font-size: 0.74rem; color: #7d93b8; margin-bottom: 24px; }
+  #pw {
+    width: 100%; padding: 12px 14px; font-size: 1rem; letter-spacing: 2px;
+    text-align: center; border-radius: 10px; border: 1px solid #2a4a7f;
+    background: #0b1220; color: #fff; outline: none; margin-bottom: 14px;
+  }
+  #pw:focus { border-color: #38bdf8; }
+  #gate-btn {
+    width: 100%; padding: 12px; font-size: 0.9rem; font-weight: 700;
+    border: 0; border-radius: 10px; cursor: pointer;
+    background: #2563eb; color: #fff;
+  }
+  #gate-btn:hover { background: #1d4ed8; }
+  #gate-err { color: #f87171; font-size: 0.75rem; height: 16px; margin-top: 10px; }
+  .gate-card.shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===== Master gate ===== -->
+  <div id="gate">
+    <div class="gate-card" id="gate-card">
+      <div class="gate-logo">🚁</div>
+      <div class="gate-title">Avilon Drone Dashboards</div>
+      <div class="gate-sub">Enter access password to continue</div>
+      <input id="pw" type="password" autocomplete="off" placeholder="Password" autofocus />
+      <button id="gate-btn">Unlock</button>
+      <div id="gate-err"></div>
+    </div>
+  </div>
+
+  <!-- ===== App shell ===== -->
+  <div id="topbar">
+    <div id="brand"><span class="logo">🚁</span><span>AVILON<br><span class="sub">Photon Dashboards</span></span></div>
+    <div id="tabs"></div>
+    <button id="lockbtn" title="Lock and sign out">🔒 Lock</button>
+  </div>
+
+  <div id="framewrap">
+    <div id="loading"><div class="spinner"></div><div>Loading dashboard…</div></div>
+    <iframe id="site" title="Customer dashboard" referrerpolicy="no-referrer"></iframe>
+  </div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  Avilon merged dashboard shell
+//  - One link, one master password, select each customer.
+//  - Each dashboard keeps its own engine (loaded live in an iframe).
+//  - Same-origin (cart-kart.github.io) → we auto-dismiss each
+//    dashboard's own PIN so there is never a second password.
+// ════════════════════════════════════════════════════════════
+
+// Customer dashboards (order = tab order)
+const SITES = [
+  { key: 'dksh',   label: 'DKSH Bangna',    url: 'https://cart-kart.github.io/DKSH-Bangna-Drone-Dashboard/' },
+  { key: 'yusen',  label: 'Amazon / Yusen', url: 'https://cart-kart.github.io/Amazon-Yusen-Drone-Dashboard/' },
+  { key: 'pcg',    label: 'PCG Bangna',     url: 'https://cart-kart.github.io/PCG-Bangna-Drone-Dashboard/' },
+  { key: 'harley', label: 'Harley / DHL',   url: 'https://cart-kart.github.io/HarleyDavidson-DHL-Drone-Dashboard/' },
+];
+
+// Master password (client-side obfuscation only — internal control panel, not real security).
+const MASTER_HASH = 'YXZpbG9uMTIwNQ=='; // base64('avilon1205')
+const SS_MASTER = 'avilon_master_ok';
+
+// ---- elements ----
+const gate     = document.getElementById('gate');
+const gateCard = document.getElementById('gate-card');
+const pwInput  = document.getElementById('pw');
+const gateErr  = document.getElementById('gate-err');
+const tabsEl   = document.getElementById('tabs');
+const frame    = document.getElementById('site');
+const loading  = document.getElementById('loading');
+
+// ---- build tabs ----
+SITES.forEach(s => {
+  const b = document.createElement('button');
+  b.className = 'tab';
+  b.textContent = s.label;
+  b.dataset.key = s.key;
+  b.addEventListener('click', () => selectSite(s.key, true));
+  tabsEl.appendChild(b);
+});
+
+// ---- master gate ----
+function tryUnlock() {
+  const val = pwInput.value;
+  if (btoa(val) === MASTER_HASH) {
+    sessionStorage.setItem(SS_MASTER, '1');
+    openApp();
+  } else {
+    gateErr.textContent = 'Incorrect password';
+    gateCard.classList.remove('shake'); void gateCard.offsetWidth; gateCard.classList.add('shake');
+    pwInput.select();
+  }
+}
+document.getElementById('gate-btn').addEventListener('click', tryUnlock);
+pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+
+function openApp() {
+  gate.classList.add('hidden');
+  const fromHash = (location.hash.replace('#', '') || '').toLowerCase();
+  const start = SITES.some(s => s.key === fromHash) ? fromHash : SITES[0].key;
+  selectSite(start, false);
+}
+
+function lock() {
+  sessionStorage.removeItem(SS_MASTER);
+  frame.src = 'about:blank';
+  gate.classList.remove('hidden');
+  pwInput.value = '';
+  gateErr.textContent = '';
+  pwInput.focus();
+}
+document.getElementById('lockbtn').addEventListener('click', lock);
+
+// ---- site selection ----
+function selectSite(key, updateHash) {
+  const site = SITES.find(s => s.key === key);
+  if (!site) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+  if (updateHash) history.replaceState(null, '', '#' + key);
+  loading.classList.add('show');
+  frame.src = site.url;
+}
+
+// ---- auto-dismiss each dashboard's own PIN (same-origin only) ----
+frame.addEventListener('load', () => {
+  loading.classList.remove('show');
+  try {
+    const w = frame.contentWindow;
+    try { w.sessionStorage.setItem('pin_ok', '1'); } catch (e) {}
+    const ov = w.document.getElementById('pin-overlay');
+    if (ov) ov.classList.add('hidden');
+  } catch (e) {
+    // Cross-origin (e.g. opened locally via file://) — auto-unlock unavailable; inner PIN will show.
+  }
+});
+
+// react to hash changes (back/forward, manual)
+window.addEventListener('hashchange', () => {
+  if (gate.classList.contains('hidden')) {
+    const k = (location.hash.replace('#', '') || '').toLowerCase();
+    if (SITES.some(s => s.key === k)) selectSite(k, false);
+  }
+});
+
+// ---- boot ----
+if (sessionStorage.getItem(SS_MASTER) === '1') {
+  openApp();
+} else {
+  pwInput.focus();
+}
+</script>
+</body>
+</html>
