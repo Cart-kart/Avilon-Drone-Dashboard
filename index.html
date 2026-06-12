@@ -163,7 +163,9 @@
     transition: transform .12s, border-color .12s, background .12s;
   }
   .ch-card:hover { transform: translateY(-3px); border-color: #38bdf8; background: #13254a; }
-  .ch-card .ch-ico { font-size: 1.9rem; margin-bottom: 10px; }
+  .ch-card .ch-ico { font-size: 1.9rem; margin-bottom: 10px; height: 64px; display: flex; align-items: center; justify-content: center; }
+  .ch-logo-chip { background: #fff; border-radius: 10px; padding: 8px 12px; margin: 0 auto 12px; height: 64px; display: flex; align-items: center; justify-content: center; }
+  .ch-logo-chip img { max-height: 46px; max-width: 100%; width: auto; object-fit: contain; display: block; }
   .ch-card .ch-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
   .ch-card .ch-go { font-size: 0.7rem; color: #7d93b8; margin-top: 6px; }
   #chooser .ch-lock { margin-top: 28px; background: transparent; border: 0; color: #7d93b8; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
@@ -216,16 +218,18 @@
 // │    key   : short unique id (lowercase, used in the URL #hash)       │
 // │    label : text shown on the tab                                    │
 // │    url   : the customer dashboard's published URL (trailing slash)  │
+// │    logo  : (optional) URL to that customer's logo for the selector  │
+// │            card. Omit to show a generic icon instead.               │
 // │  Tabs, routing, and auto-unlock are all generated automatically.    │
 // │  NOTE: PIN auto-dismiss only works for same-origin dashboards       │
 // │  (cart-kart.github.io). External URLs will show their own login.    │
 // └──────────────────────────────────────────────────────────────────┘
 const SITES = [
-  { key: 'dksh',   label: 'DKSH Bangna',    url: 'https://cart-kart.github.io/DKSH-Bangna-Drone-Dashboard/' },
-  { key: 'yusen',  label: 'Amazon / Yusen', url: 'https://cart-kart.github.io/Amazon-Yusen-Drone-Dashboard/' },
-  { key: 'pcg',    label: 'PCG Bangna',     url: 'https://cart-kart.github.io/PCG-Bangna-Drone-Dashboard/' },
+  { key: 'dksh',   label: 'DKSH Bangna',    url: 'https://cart-kart.github.io/DKSH-Bangna-Drone-Dashboard/',         logo: 'https://cart-kart.github.io/DKSH-Bangna-Drone-Dashboard/DKSH_hori_red_rgb.png' },
+  { key: 'yusen',  label: 'Amazon / Yusen', url: 'https://cart-kart.github.io/Amazon-Yusen-Drone-Dashboard/',        logo: 'https://cart-kart.github.io/Amazon-Yusen-Drone-Dashboard/yusen_logo.gif' },
+  { key: 'pcg',    label: 'PCG Bangna',     url: 'https://cart-kart.github.io/PCG-Bangna-Drone-Dashboard/',          logo: 'https://cart-kart.github.io/PCG-Bangna-Drone-Dashboard/PCGHEADER.png' },
   { key: 'harley', label: 'Harley / DHL',   url: 'https://cart-kart.github.io/HarleyDavidson-DHL-Drone-Dashboard/' },
-  // { key: 'newco', label: 'New Customer',  url: 'https://cart-kart.github.io/NewCustomer-Drone-Dashboard/' },
+  // { key: 'newco', label: 'New Customer',  url: 'https://cart-kart.github.io/NewCustomer-Drone-Dashboard/', logo: '.../logo.png' },
 ];
 
 // Master password (client-side obfuscation only — internal control panel, not real security).
@@ -253,7 +257,22 @@ SITES.forEach(s => {
 
   const card = document.createElement('div');
   card.className = 'ch-card';
-  card.innerHTML = '<div class="ch-ico">🚁</div><div class="ch-name">' + s.label + '</div><div class="ch-go">Open →</div>';
+  if (s.logo) {
+    const chip = document.createElement('div');
+    chip.className = 'ch-logo-chip';
+    const img = document.createElement('img');
+    img.src = s.logo; img.alt = s.label;
+    img.onerror = () => { chip.outerHTML = '<div class="ch-ico">🚁</div>'; };
+    chip.appendChild(img);
+    card.appendChild(chip);
+  } else {
+    const ico = document.createElement('div');
+    ico.className = 'ch-ico'; ico.textContent = '🚁';
+    card.appendChild(ico);
+  }
+  const nm = document.createElement('div'); nm.className = 'ch-name'; nm.textContent = s.label;
+  const go = document.createElement('div'); go.className = 'ch-go'; go.textContent = 'Open →';
+  card.appendChild(nm); card.appendChild(go);
   card.addEventListener('click', () => goToSite(s.key));
   chGrid.appendChild(card);
 });
