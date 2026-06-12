@@ -125,6 +125,40 @@
     25% { transform: translateX(-8px); }
     75% { transform: translateX(8px); }
   }
+  .gate-logo-img { height: 52px; width: auto; background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 18px; }
+
+  /* ===== Brand logo + home button ===== */
+  .brand-logo { height: 30px; width: auto; background: #fff; border-radius: 5px; padding: 3px 7px; display: block; }
+  #homebtn {
+    appearance: none; border: 0; cursor: pointer;
+    background: rgba(255,255,255,0.10); color: #cfe0ff;
+    font-size: 0.78rem; font-weight: 600;
+    padding: 7px 12px; border-radius: 8px; margin: 0 10px 0 16px; white-space: nowrap;
+  }
+  #homebtn:hover { background: rgba(255,255,255,0.20); color: #fff; }
+
+  /* ===== Dashboard chooser ===== */
+  #chooser {
+    position: fixed; inset: 0; z-index: 90;
+    background: radial-gradient(circle at 50% 25%, #14305f 0%, #0b1220 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px;
+  }
+  #chooser.hidden { display: none; }
+  #chooser .ch-logo { height: 50px; width: auto; background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 16px; }
+  #chooser .ch-title { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  #chooser .ch-sub { font-size: 0.78rem; color: #7d93b8; margin-bottom: 28px; }
+  .ch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; width: 100%; max-width: 740px; }
+  .ch-card {
+    background: #0f1b33; border: 1px solid #1e3a5f; border-radius: 14px;
+    padding: 26px 18px; cursor: pointer; text-align: center;
+    transition: transform .12s, border-color .12s, background .12s;
+  }
+  .ch-card:hover { transform: translateY(-3px); border-color: #38bdf8; background: #13254a; }
+  .ch-card .ch-ico { font-size: 1.9rem; margin-bottom: 10px; }
+  .ch-card .ch-name { font-size: 0.95rem; font-weight: 700; color: #fff; }
+  .ch-card .ch-go { font-size: 0.7rem; color: #7d93b8; margin-top: 6px; }
+  #chooser .ch-lock { margin-top: 28px; background: transparent; border: 0; color: #7d93b8; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
+  #chooser .ch-lock:hover { color: #cbd5e1; }
 </style>
 </head>
 <body>
@@ -132,7 +166,7 @@
   <!-- ===== Master gate ===== -->
   <div id="gate">
     <div class="gate-card" id="gate-card">
-      <div class="gate-logo">🚁</div>
+      <img class="gate-logo-img" src="AR-New-LOGO.png" alt="Avilon Robotics" />
       <div class="gate-title">Avilon Drone Dashboards</div>
       <div class="gate-sub">Enter access password to continue</div>
       <input id="pw" type="password" autocomplete="off" placeholder="Password" autofocus />
@@ -141,9 +175,19 @@
     </div>
   </div>
 
+  <!-- ===== Dashboard chooser ===== -->
+  <div id="chooser" class="hidden">
+    <img class="ch-logo" src="AR-New-LOGO.png" alt="Avilon Robotics" />
+    <div class="ch-title">Select a dashboard</div>
+    <div class="ch-sub">Choose a customer site to view</div>
+    <div class="ch-grid" id="ch-grid"></div>
+    <button class="ch-lock" id="ch-lock">🔒 Lock</button>
+  </div>
+
   <!-- ===== App shell ===== -->
   <div id="topbar">
-    <div id="brand"><span class="logo">🚁</span><span>AVILON<br><span class="sub">Photon Dashboards</span></span></div>
+    <div id="brand"><img class="brand-logo" src="AR-New-LOGO.png" alt="Avilon Robotics" /></div>
+    <button id="homebtn" title="All dashboards">⊞ Dashboards</button>
     <div id="tabs"></div>
     <button id="lockbtn" title="Lock and sign out">🔒 Lock</button>
   </div>
@@ -188,11 +232,13 @@ const gate     = document.getElementById('gate');
 const gateCard = document.getElementById('gate-card');
 const pwInput  = document.getElementById('pw');
 const gateErr  = document.getElementById('gate-err');
+const chooser  = document.getElementById('chooser');
+const chGrid   = document.getElementById('ch-grid');
 const tabsEl   = document.getElementById('tabs');
 const frame    = document.getElementById('site');
 const loading  = document.getElementById('loading');
 
-// ---- build tabs ----
+// ---- build tabs + chooser cards (both generated from SITES) ----
 SITES.forEach(s => {
   const b = document.createElement('button');
   b.className = 'tab';
@@ -200,6 +246,12 @@ SITES.forEach(s => {
   b.dataset.key = s.key;
   b.addEventListener('click', () => selectSite(s.key, true));
   tabsEl.appendChild(b);
+
+  const card = document.createElement('div');
+  card.className = 'ch-card';
+  card.innerHTML = '<div class="ch-ico">🚁</div><div class="ch-name">' + s.label + '</div><div class="ch-go">Open →</div>';
+  card.addEventListener('click', () => goToSite(s.key));
+  chGrid.appendChild(card);
 });
 
 // ---- master gate ----
@@ -220,19 +272,37 @@ pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); }
 function openApp() {
   gate.classList.add('hidden');
   const fromHash = (location.hash.replace('#', '') || '').toLowerCase();
-  const start = SITES.some(s => s.key === fromHash) ? fromHash : SITES[0].key;
-  selectSite(start, false);
+  if (SITES.some(s => s.key === fromHash)) {
+    goToSite(fromHash);   // deep-link straight to a customer (e.g. #pcg)
+  } else {
+    showChooser();        // otherwise show the dashboard selector
+  }
+}
+
+function showChooser() {
+  chooser.classList.remove('hidden');
+}
+
+function goToSite(key) {
+  chooser.classList.add('hidden');
+  selectSite(key, true);
 }
 
 function lock() {
   sessionStorage.removeItem(SS_MASTER);
   frame.src = 'about:blank';
+  chooser.classList.add('hidden');
   gate.classList.remove('hidden');
   pwInput.value = '';
   gateErr.textContent = '';
   pwInput.focus();
 }
 document.getElementById('lockbtn').addEventListener('click', lock);
+document.getElementById('ch-lock').addEventListener('click', lock);
+document.getElementById('homebtn').addEventListener('click', () => {
+  history.replaceState(null, '', location.pathname + location.search);
+  showChooser();
+});
 
 // ---- site selection ----
 function selectSite(key, updateHash) {
